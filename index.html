@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Leírás Generátor · Gemini</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0e0e10;
+            --surface: #16161a;
+            --surface2: #1e1e24;
+            --border: #2a2a32;
+            --border-bright: #3a3a46;
+            --accent: #4fc3f7;
+            --accent2: #a78bfa;
+            --accent3: #ff9d6e;
+            --text: #e8e8f0;
+            --text-muted: #7a7a8c;
+            --text-dim: #4a4a5a;
+            --error: #ff6e6e;
+            --warn: #ffd06e;
+            --radius: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--surface); }
+        ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 28px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: #000;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .header-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .api-key-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 6px 12px;
+        }
+
+        .api-key-wrap label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'IBM Plex Mono', monospace;
+            white-space: nowrap;
+        }
+
+        .api-key-wrap input {
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--text);
+            width: 200px;
+        }
+
+        .api-status {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            flex-shrink: 0;
+            transition: background 0.3s;
+        }
+        .api-status.active { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+        /* MAIN LAYOUT */
+        .app-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            height: calc(100vh - 57px);
+            overflow: hidden;
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-section {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-section:last-child { border-bottom: none; }
+
+        .section-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-label .badge {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 9px;
+            color: var(--accent);
+        }
+
+        .field-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .field-label .req {
+            color: var(--accent);
+            font-size: 10px;
+        }
+
+        .field-label .opt {
+            color: var(--text-dim);
+            font-size: 10px;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            padding: 9px 12px;
+            outline: none;
+            transition: border-color 0.2s;
+            resize: none;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--accent2);
+        }
+
+        textarea.mono {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .mb-10 { margin-bottom: 10px; }
+        .mb-14 { margin-bottom: 14px; }
+
+        /* Keyword chips */
+        .kw-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            max-height: 80px;
+            overflow-y: auto;
+            margin-top: 8px;
+        }
+
+        .kw-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2px 7px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .kw-chip .vol {
+            color: var(--accent);
+            font-size: 10px;
+        }
+
+        .kw-empty {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        /* MODEL SELECTOR */
+        .model-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .model-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 8px 10px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s;
+        }
+
+        .model-btn:hover { border-color: var(--border-bright); }
+
+        .model-btn.active {
+            border-color: var(--accent);
+            background: rgba(127, 255, 110, 0.06);
+        }
+
+        .model-btn-name {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .model-btn.active .model-btn-name { color: var(--accent); }
+
+        .model-btn-desc {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* STRUCTURE TOGGLES */
+        .struct-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .struct-toggle {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            padding: 7px 9px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: all 0.15s;
+            user-select: none;
+        }
+
+        .struct-toggle:hover { border-color: var(--border-bright); }
+        .struct-toggle.on { border-color: var(--accent2); background: rgba(110, 184, 255, 0.06); }
+
+        .toggle-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-bright);
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .struct-toggle.on .toggle-dot { background: var(--accent2); }
+
+        .toggle-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .struct-toggle.on .toggle-label { color: var(--text); }
+
+        /* TONE SELECTOR */
+        .tone-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tone-btn {
+            flex: 1;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 7px 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+
+        .tone-btn:hover { border-color: var(--border-bright); color: var(--text); }
+
+        .tone-btn.active {
+            border-color: var(--accent3);
+            background: rgba(255, 157, 110, 0.08);
+            color: var(--accent3);
+        }
+
+        /* STATS BAR */
+        .stats-bar {
+            display: flex;
+            gap: 12px;
+            padding: 10px 20px;
+            background: var(--surface2);
+            border-top: 1px solid var(--border);
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .stat-val {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .stat-val.highlight { color: var(--accent); }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* TOOLBAR */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-generate {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: var(--radius);
+            padding: 9px 20px;
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-generate:hover { background: #90ff80; transform: translateY(-1px); }
+        .btn-generate:disabled { background: var(--border); color: var(--text-dim); cursor: not-allowed; transform: none; }
+
+        .btn-generate.loading {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: wait;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; display: inline-block; }
+
+        .view-tabs {
+            display: flex;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .view-tab {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+
+        .view-tab.active {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 6px 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-icon:hover { border-color: var(--border-bright); color: var(--text); }
+        .btn-icon.copied { border-color: var(--accent); color: var(--accent); }
+
+        .output-stats {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            padding: 0 4px;
+        }
+
+        /* OUTPUT AREA */
+        .output-area {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .output-pane {
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        .output-pane.active { display: block; }
+
+        /* Code view */
+        .code-pane {
+            position: relative;
+        }
+
+        #code-output {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            border: none;
+            outline: none;
+            padding: 20px 24px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12.5px;
+            line-height: 1.7;
+            resize: none;
+        }
+
+        /* Preview view */
+        .preview-pane {
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        #preview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Prompt debug */
+        .prompt-pane {
+            overflow-y: auto;
+            padding: 20px 24px;
+            background: var(--bg);
+        }
+
+        .prompt-text {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11.5px;
+            line-height: 1.8;
+            color: var(--text-muted);
+            white-space: pre-wrap;
+        }
+
+        /* KW STATS */
+        .kw-stats-title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; font-weight: 600;
+            color: var(--text-muted); letter-spacing: 1px;
+            text-transform: uppercase; margin-bottom: 4px;
+        }
+        .kw-stat-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .kw-stat-word { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .kw-stat-count {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; font-weight: 600;
+            padding: 2px 8px; border-radius: 4px; flex-shrink: 0;
+        }
+        .kw-stat-count.found { background: rgba(110,255,160,0.12); color: #6effa0; }
+        .kw-stat-count.missing { background: var(--surface2); color: var(--text-dim); }
+        .kw-stat-bar-wrap { flex: 1; height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; min-width: 60px; }
+        .kw-stat-bar { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.6s ease; }
+
+        /* EMPTY STATE */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 12px;
+            color: var(--text-dim);
+        }
+
+        .empty-icon {
+            font-size: 36px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .empty-sub {
+            font-size: 12px;
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.6;
+        }
+
+        /* STREAMING */
+        @keyframes blink { 50% { opacity: 0; } }
+        .cursor-blink {
+            display: inline-block;
+            width: 2px;
+            height: 14px;
+            background: var(--accent);
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+
+        /* ERROR */
+        .error-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 110, 110, 0.1);
+            border-top: 1px solid var(--error);
+            padding: 10px 20px;
+            font-size: 12px;
+            color: var(--error);
+        }
+
+        .error-bar button {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--error);
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        /* DIVIDER */
+        .divider {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+        }
+
+        /* CHAR COUNT */
+        .char-count {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--text-dim);
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        /* Generate progress */
+        .progress-bar {
+            height: 2px;
+            background: var(--surface2);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-fill.indeterminate {
+            width: 40%;
+            animation: indeterminate 1.5s ease-in-out infinite;
+        }
+
+        @keyframes indeterminate {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(300%); }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            .app-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+            .left-panel { max-height: 50vh; }
+            .api-key-wrap input { width: 140px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="header-brand">
+        <div class="header-logo">S</div>
+        <div>
+            <div class="header-title">SEO Generátor</div>
+            <div class="header-sub">Termékkategória leírás · Google Gemini</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="api-key-wrap">
+            <div class="api-status" id="api-status"></div>
+            <label>API KEY</label>
+            <input type="password" id="api-key-input" placeholder="AIzaSy..." autocomplete="off">
+        </div>
+    </div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+<!-- MAIN LAYOUT -->
+<div class="app-layout">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+
+        <!-- 1. Téma -->
+        <div class="panel-section">
+            <div class="section-label">
+                <span>01</span> Kategória téma
+            </div>
+            <div class="field-label">
+                <span>Fő témakör / kategória neve</span>
+                <span class="req">kötelező</span>
+            </div>
+            <input type="text" id="category-topic" placeholder="Pl.: Fekete gránit mosogatók előnyei és választása" class="mb-10">
+        </div>
+
+        <!-- 2. Kulcsszavak -->
+        <div class="panel-section">
+            <div class="section-label">
+                <span>02</span> Kulcsszavak
+                <span class="badge" id="kw-count-badge">0 db</span>
+            </div>
+            <div class="field-label">
+                <span>szó=keresési_szám formátum</span>
+                <span class="req">kötelező</span>
+            </div>
+            <textarea id="keywords-input" class="mono mb-10" rows="7" placeholder="fekete gránit mosogató=1200&#10;gránit mosogató fekete=800&#10;konyhai mosogató=350&#10;fekete mosogató=200"></textarea>
+            <div class="kw-chips" id="kw-chips">
+                <span class="kw-empty">Nincs érvényes kulcsszó még</span>
+            </div>
+        </div>
+
+        <!-- 3. Alkategóriák -->
+        <div class="panel-section">
+            <div class="section-label">
+                <span>03</span> Alkategóriák / Kontextus
+                <span style="color:var(--text-dim);font-size:9px;margin-left:auto">OPCIONÁLIS</span>
+            </div>
+            <div class="field-label">
+                <span>Belső linkek és extra infók</span>
+            </div>
+            <textarea id="additional-context" rows="5" placeholder="Alkategória: Mosogató csaptelepek (https://example.com/csaptelepek)&#10;Alkategória: Beépíthető mosogatógépek (https://example.com/mosogatogepek)&#10;&#10;Egyéb fontos info a szöveghez..."></textarea>
+            <div class="char-count" id="context-chars">0 karakter</div>
+        </div>
+
+        <!-- 4. HTML elemek -->
+        <div class="panel-section">
+            <div class="section-label">
+                <span>04</span> HTML struktúra
+            </div>
+            <div class="struct-grid" id="struct-grid">
+                <label class="struct-toggle on" data-key="intro_p">
+                    <div class="toggle-dot"></div>
+                    <span class="toggle-label">Bevezető §</span>
+                </label>
+                <label class="struct-toggle on" data-key="h2_sections">
+                    <div class="toggle-dot"></div>
+                    <span class="toggle-label">H2 szekciók</span>
+                </label>
+                <label class="struct-toggle on" data-key="or_advantages">
+                    <div class="toggle-dot"></div>
+                    <span class="toggle-label">or_advantages</span>
+                </label>
+                <label class="struct-toggle on" data-key="article_bulletin">
+                    <div class="toggle-dot"></div>
+                    <span class="toggle-label">article-bulletin</span>
+                </label>
+                <label class="struct-toggle on" data-key="imgwrapper">
+                    <div class="toggle-dot"></div>
+                    <span class="toggle-label">imgwrapper</span>
+                </label>
+                <label class="struct-toggle on" data-key="zarovka100">
+                    <div class="toggle-dot"></div>
+                    <span class="toggle-label">zarovka100</span>
+                </label>
+                <label class="struct-toggle on" data-key="ul_list">
+                    <div class="toggle-dot"></div>
+                    <span class="toggle-label">Felsorolás</span>
+                </label>
+                <label class="struct-toggle" data-key="ol_list">
+                    <div class="toggle-dot"></div>
+                    <span class="toggle-label">Számozott lista</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 5. Hangnem -->
+        <div class="panel-section">
+            <div class="section-label">
+                <span>05</span> Stílus és hangnem
+            </div>
+            <div class="tone-row mb-14" id="tone-row">
+                <button class="tone-btn active" data-tone="tegező">Tegező</button>
+                <button class="tone-btn" data-tone="magázó">Magázó</button>
+                <button class="tone-btn" data-tone="semleges">Semleges</button>
+            </div>
+            <div class="field-label"><span>Modell</span></div>
+            <div class="model-grid" id="model-grid">
+                <button class="model-btn active" data-model="gemini-3.1-pro-preview">
+                    <div class="model-btn-name">3.1 Pro</div>
+                    <div class="model-btn-desc">Alapértelmezett</div>
+                </button>
+                <button class="model-btn" data-model="gemini-2.5-pro">
+                    <div class="model-btn-name">2.5 Pro</div>
+                    <div class="model-btn-desc">Alternatíva</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-bar" style="margin-top:auto">
+            <div class="stat">
+                <span class="stat-label">KW</span>
+                <span class="stat-val highlight" id="stat-kw">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Prompt</span>
+                <span class="stat-val" id="stat-prompt">—</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Kimenet</span>
+                <span class="stat-val" id="stat-output">—</span>
+            </div>
+            <div class="stat" style="margin-left:auto">
+                <span class="stat-label">Modell</span>
+                <span class="stat-val" id="stat-model">3.1 Pro</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <button class="btn-generate" id="generate-btn">
+                    <span id="gen-icon">⚡</span>
+                    <span id="gen-label">Generálás</span>
+                </button>
+                <div class="view-tabs">
+                    <button class="view-tab active" data-view="code">Kód</button>
+                    <button class="view-tab" data-view="preview">Előnézet</button>
+                    <button class="view-tab" data-view="keywords">Kulcsszavak</button>
+                    <button class="view-tab" data-view="prompt">Prompt</button>
+                </div>
+            </div>
+            <div class="toolbar-right">
+                <span class="output-stats" id="output-stats"></span>
+                <div class="divider"></div>
+                <button class="btn-icon" id="copy-btn">
+                    <span>⎘</span> Másolás
+                </button>
+            </div>
+        </div>
+
+        <div class="output-area" id="output-area">
+            <!-- Code view -->
+            <div class="output-pane code-pane active" id="pane-code">
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-icon">◈</div>
+                    <div class="empty-title">Várakozás a generálásra</div>
+                    <div class="empty-sub">Add meg a kategória témáját és kulcsszavakat, majd kattints a Generálás gombra.</div>
+                </div>
+                <textarea id="code-output" style="display:none" spellcheck="false"></textarea>
+            </div>
+
+            <!-- Preview view -->
+            <div class="output-pane preview-pane" id="pane-preview">
+                <iframe id="preview-frame" sandbox="allow-same-origin"></iframe>
+            </div>
+
+            <!-- Keywords view -->
+            <div class="output-pane" id="pane-keywords" style="overflow-y:auto;flex-direction:column;padding:20px 24px;background:var(--bg);gap:8px;">
+                <div id="kw-stats-list" style="display:flex;flex-direction:column;gap:8px;">
+                    <div class="empty-state">
+                        <div class="empty-icon">◈</div>
+                        <div class="empty-title">Nincs adat még</div>
+                        <div class="empty-sub">Generálj szöveget, majd ellenőrizd a kulcsszó előfordulásokat.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompt view -->
+            <div class="output-pane" id="pane-prompt">
+                <div class="prompt-pane">
+                    <pre class="prompt-text" id="prompt-text">A prompt itt jelenik meg generálás előtt / után.</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error bar -->
+        <div class="error-bar" id="error-bar" style="display:none">
+            <span>⚠</span>
+            <span id="error-msg"></span>
+            <button onclick="hideError()">✕</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+const MANDATORY_PREFIX = `<link href="https://cdn.alza.hu/Foto/LegendFoto/EN/Files/css/_or_nastroje.css" rel="stylesheet" />
+<style type="text/css">
+\tdiv.imgwrapper {
+\t\tdisplay: -ms-flexbox; display: -webkit-flex; display: flex; -webkit-justify-content: center; -ms-flex-pack: center; justify-content: center;
+\t}
+\tp.imgbox {
+\t\ttext-align: center; font-size: 13px; font-weight: 800; -webkit-flex: 1 1 auto; -ms-flex: 1 1 auto; flex: 1 1 auto; margin-right: 2%;
+\t}
+\tp.imgbox:last-child { margin-right: 0; }
+\tp.imgbox img { max-width: 85%; }
+\tp.imgbox a img { max-width: 85%; }
+\t.categoryPage .category-description .imgwrapper a,
+\t.categoryPage .category-description .imgwrapper { color: #00275a; text-decoration: none; }
+\t.categoryPage .category-description .imgwrapper a:hover { text-decoration: underline; }
+</style>
+`;
+
+// Minta struktúra referencia (a prompthoz)
+const SAMPLE_STRUCTURE = `<!-- MINTA KIMENET REFERENCIA:
+
+<p>Bevezető bekezdés, bevezeti a kategóriát, ~3-4 mondat, tegeződő stílusban.</p>
+
+<h2>Főcím – tartalmazza a fő kulcsszót</h2>
+<p>Leíró bekezdés...</p>
+<div class="or_advantages or_advantages_fullwidth">
+  <div class="or_advantages_plus">
+    <ul>
+      <li>Előny 1</li>
+      <li>Előny 2</li>
+      <li>Előny 3</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Második H2 cím</h2>
+<p>Bekezdés...</p>
+<div class="article-bulletin">
+  <p>i</p>
+  <h3>Tipp cím</h3>
+  <p>Tipp szöveg <strong>kiemelt szó</strong> vége.</p>
+</div>
+
+<h2>Harmadik H2 cím</h2>
+<p>Bekezdés...</p>
+
+<h2>Negyedik H2 cím</h2>
+<p>Bekezdés felsorolással:</p>
+<ul>
+  <li>A <strong>első elem</strong> leírása.</li>
+  <li>A <strong>második elem</strong> leírása.</li>
+  <li>A <strong>harmadik elem</strong> leírása.</li>
+</ul>
+
+<br />
+<div class="imgwrapper">
+  <p class="imgbox"><img class="no-lazy" alt="alt szöveg 1" src="https://placeholder.url/kep1.jpg" height="300" width="368" loading="lazy" /><br />Képaláírás 1</p>
+  <p class="imgbox"><img class="no-lazy" alt="alt szöveg 2" src="https://placeholder.url/kep2.jpg" height="300" width="420" loading="lazy" /><br />Képaláírás 2</p>
+  <p class="imgbox"><img class="no-lazy" alt="alt szöveg 3" src="https://placeholder.url/kep3.jpg" height="300" width="420" loading="lazy" /><br />Képaláírás 3</p>
+</div>
+
+<p class="zarovka100">Érdekesség / fun fact bekezdés. <strong>Kiemelt rész.</strong></p>
+
+<h2>Ötödik H2 cím</h2>
+<p>Bekezdés...</p>
+<ul>
+  <li>A <strong>első elem</strong> leírása.</li>
+</ul>
+
+<h2>Hatodik H2 cím</h2>
+<p>Záró bekezdés...</p>
+<div class="article-bulletin">
+  <p>i</p>
+  <p>Zárótipp linkkel: <a href="https://example.com/link">anchor szöveg</a> leírása.</p>
+</div>
+
+-->`;
+
+let state = {
+    apiKey: localStorage.getItem('seo_gemini_api_key') || '',
+    categoryTopic: '',
+    additionalContext: '',
+    rawKeywords: '',
+    parsedKeywords: [],
+    modelName: 'gemini-3.1-pro-preview',
+    tone: 'tegező',
+    isGenerating: false,
+    generationResult: '',
+    activeView: 'code',
+    structToggles: {
+        intro_p: true,
+        h2_sections: true,
+        or_advantages: true,
+        article_bulletin: true,
+        imgwrapper: true,
+        zarovka100: true,
+        ul_list: true,
+        ol_list: false,
+    }
+};
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+window.onload = () => {
+    // Restore API key
+    if (state.apiKey) {
+        document.getElementById('api-key-input').value = state.apiKey;
+        document.getElementById('api-status').classList.add('active');
+    }
+
+    // Load saved state
+    const saved = localStorage.getItem('seo_state');
+    if (saved) {
+        try {
+            const s = JSON.parse(saved);
+            if (s.categoryTopic) {
+                state.categoryTopic = s.categoryTopic;
+                document.getElementById('category-topic').value = s.categoryTopic;
+            }
+            if (s.rawKeywords) {
+                state.rawKeywords = s.rawKeywords;
+                document.getElementById('keywords-input').value = s.rawKeywords;
+                parseKeywords();
+            }
+            if (s.additionalContext) {
+                state.additionalContext = s.additionalContext;
+                document.getElementById('additional-context').value = s.additionalContext;
+                updateCharCount();
+            }
+        } catch(e) {}
+    }
+
+    attachListeners();
+    updateKwChips();
+    updateStats();
+    updatePromptPreview();
+};
+
+// ═══════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════════════
+function attachListeners() {
+    // API Key
+    document.getElementById('api-key-input').addEventListener('input', e => {
+        state.apiKey = e.target.value.trim();
+        localStorage.setItem('seo_gemini_api_key', state.apiKey);
+        document.getElementById('api-status').classList.toggle('active', state.apiKey.length > 10);
+        updateStats();
+    });
+
+    // Category topic
+    document.getElementById('category-topic').addEventListener('input', e => {
+        state.categoryTopic = e.target.value;
+        saveState();
+        updateStats();
+        updatePromptPreview();
+    });
+
+    // Keywords
+    document.getElementById('keywords-input').addEventListener('input', e => {
+        state.rawKeywords = e.target.value;
+        parseKeywords();
+        updateKwChips();
+        saveState();
+        updateStats();
+        updatePromptPreview();
+    });
+
+    // Additional context
+    document.getElementById('additional-context').addEventListener('input', e => {
+        state.additionalContext = e.target.value;
+        saveState();
+        updateCharCount();
+        updatePromptPreview();
+    });
+
+    // Model buttons
+    document.querySelectorAll('#model-grid .model-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#model-grid .model-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.modelName = btn.dataset.model;
+            document.getElementById('stat-model').textContent = btn.querySelector('.model-btn-name').textContent;
+            updatePromptPreview();
+        });
+    });
+
+    // Tone buttons
+    document.querySelectorAll('#tone-row .tone-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#tone-row .tone-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.tone = btn.dataset.tone;
+            updatePromptPreview();
+        });
+    });
+
+    // Struct toggles
+    document.querySelectorAll('#struct-grid .struct-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const key = toggle.dataset.key;
+            state.structToggles[key] = !state.structToggles[key];
+            toggle.classList.toggle('on', state.structToggles[key]);
+            updatePromptPreview();
+        });
+    });
+
+    // View tabs
+    document.querySelectorAll('.view-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            state.activeView = tab.dataset.view;
+            showPane(state.activeView);
+        });
+    });
+
+    // Generate
+    document.getElementById('generate-btn').addEventListener('click', handleGenerate);
+
+    // Copy
+    document.getElementById('copy-btn').addEventListener('click', handleCopy);
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function parseKeywords() {
+    const lines = state.rawKeywords.split('\n');
+    state.parsedKeywords = lines
+        .map(line => {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.includes('=')) return null;
+            const [kw, vol] = trimmed.split('=');
+            const volume = parseInt(vol?.trim(), 10);
+            if (!kw?.trim() || isNaN(volume)) return null;
+            return { word: kw.trim(), volume };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.volume - a.volume);
+}
+
+function updateKwChips() {
+    const container = document.getElementById('kw-chips');
+    const badge = document.getElementById('kw-count-badge');
+    const count = state.parsedKeywords.length;
+    badge.textContent = `${count} db`;
+
+    if (count === 0) {
+        container.innerHTML = '<span class="kw-empty">Nincs érvényes kulcsszó még</span>';
+        return;
+    }
+    container.innerHTML = state.parsedKeywords.map(k =>
+        `<span class="kw-chip">${k.word} <span class="vol">${k.volume.toLocaleString('hu-HU')}</span></span>`
+    ).join('');
+}
+
+function updateCharCount() {
+    const len = state.additionalContext.length;
+    document.getElementById('context-chars').textContent = `${len.toLocaleString('hu-HU')} karakter`;
+}
+
+function updateStats() {
+    document.getElementById('stat-kw').textContent = state.parsedKeywords.length;
+    const prompt = constructPrompt();
+    document.getElementById('stat-prompt').textContent = prompt.length > 0 ? `${prompt.length.toLocaleString('hu-HU')} kar` : '—';
+    const outLen = state.generationResult.length;
+    document.getElementById('stat-output').textContent = outLen > 0 ? `${outLen.toLocaleString('hu-HU')} kar` : '—';
+    if (outLen > 0) {
+        document.getElementById('output-stats').textContent = `${outLen.toLocaleString('hu-HU')} karakter`;
+    }
+}
+
+function saveState() {
+    localStorage.setItem('seo_state', JSON.stringify({
+        categoryTopic: state.categoryTopic,
+        rawKeywords: state.rawKeywords,
+        additionalContext: state.additionalContext,
+    }));
+}
+
+function showPane(view) {
+    ['code', 'preview', 'keywords', 'prompt'].forEach(v => {
+        document.getElementById(`pane-${v}`).classList.toggle('active', v === view);
+    });
+    if (view === 'preview' && state.generationResult) updatePreview();
+    if (view === 'keywords') updateKwStats();
+}
+
+function updateKwStats() {
+    const container = document.getElementById('kw-stats-list');
+    if (!state.generationResult || state.parsedKeywords.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-title">Nincs adat még</div><div class="empty-sub">Generálj szöveget, majd ellenőrizd a kulcsszó előfordulásokat.</div></div>`;
+        return;
+    }
+    const stats = state.parsedKeywords.map(kw => {
+        const regex = new RegExp(kw.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        const matches = state.generationResult.match(regex);
+        return { word: kw.word, volume: kw.volume, count: matches ? matches.length : 0 };
+    });
+    const maxCount = Math.max(...stats.map(s => s.count), 1);
+    container.innerHTML = `<div class="kw-stats-title">Kulcsszó előfordulás a generált szövegben</div>` +
+        stats.map(s => `
+        <div class="kw-stat-row">
+            <span class="kw-stat-word" title="${s.word}">${s.word}</span>
+            <div class="kw-stat-bar-wrap">
+                <div class="kw-stat-bar" style="width:${Math.round((s.count/maxCount)*100)}%"></div>
+            </div>
+            <span class="kw-stat-count ${s.count > 0 ? 'found' : 'missing'}">${s.count}×</span>
+        </div>`).join('');
+}
+
+function updatePreview() {
+    const frame = document.getElementById('preview-frame');
+
+    const content = state.generationResult
+        .replace(/<link[^>]+>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '');
+
+    const previewHtml = `<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="hu">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdn.alza.cz/Foto/or/articles/30917/css/global-full.css">
+    <link rel="stylesheet" href="https://cdn.alza.cz/Foto/or/articles/30917/css/categorypage-full.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.alza.cz/Foto/imggalery/LandingPages/NewCategoryStyle/style.css">
+    <link rel="stylesheet" href="https://cdn.alza.hu/Foto/LegendFoto/EN/Files/css/_or_nastroje.css">
+    <style>
+        html, body { margin: 0; padding: 0; background: #fff; }
+        img { height: auto; }
+        div.imgwrapper {
+            display: -ms-flexbox; display: -webkit-flex; display: flex;
+            -webkit-justify-content: center; -ms-flex-pack: center; justify-content: center;
+        }
+        p.imgbox {
+            text-align: center; font-size: 13px; font-weight: 800;
+            -webkit-flex: 1 1 auto; -ms-flex: 1 1 auto; flex: 1 1 auto; margin-right: 2%;
+        }
+        p.imgbox:last-child { margin-right: 0; }
+        p.imgbox img { max-width: 85%; }
+        p.imgbox a img { max-width: 85%; }
+        .categoryPage .category-description .imgwrapper a,
+        .categoryPage .category-description .imgwrapper { color: #00275a; text-decoration: none; }
+        .categoryPage .category-description .imgwrapper a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body class="default alza-cz alza">
+<div class="layout-1 cpg lng-hu alza" id="body2">
+  <div id="body2Inner"><div id="body3Inner"><div class="page2" id="page">
+    <div id="content0c"><div id="content0"><div id="content2">
+      <div class="categoryPage"><div class="mainContent">
+        <div id="categoryAnotationBlock">
+          <div class="category-description" id="categoryUpperDescription">
+            <div>
+              ${content}
+            </div>
+            <div class="decription-body"></div>
+          </div>
+        </div>
+      </div></div>
+    </div></div></div>
+  </div></div></div>
+</body>
+</html>`;
+
+    frame.srcdoc = previewHtml;
+}
+
+function updatePromptPreview() {
+    document.getElementById('prompt-text').textContent = constructPrompt();
+    updateStats();
+}
+
+function showError(msg) {
+    document.getElementById('error-msg').textContent = msg;
+    document.getElementById('error-bar').style.display = 'flex';
+}
+
+function hideError() {
+    document.getElementById('error-bar').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════
+// PROMPT BUILDER
+// ═══════════════════════════════════════════════════
+function constructPrompt() {
+    const kwList = state.parsedKeywords.map(k => `${k.word}=${k.volume}`).join(', ');
+
+    const toneText = {
+        'tegező': 'TEGEZŐDŐ (informális, "te" forma, közvetlen)',
+        'magázó': 'MAGÁZÓ (formális, "Ön" forma, udvarias)',
+        'semleges': 'SEMLEGES (sem tegező, sem magázó, tárgyilagos)',
+    }[state.tone] || 'TEGEZŐDŐ';
+
+    const structOn = state.structToggles;
+    const structRules = [
+        structOn.intro_p ? '✓ Bevezető bekezdés (<p>) – ez a legelső elem, H2 előtt' : '✗ NE legyen bevezető bekezdés, a szöveg H2-vel kezdődjön',
+        structOn.h2_sections ? '✓ Legalább 4–6 db H2 szekció (<h2>), minden szekció mellé bekezdés(ek)' : '✗ NE legyen H2, csak H3 alcímekkel tagolj',
+        structOn.or_advantages ? '✓ Legalább 1 db előny-blokk: <div class="or_advantages or_advantages_fullwidth"><div class="or_advantages_plus"><ul><li>...</li></ul></div></div>' : '✗ NE legyen or_advantages blokk',
+        structOn.article_bulletin ? '✓ Legalább 1–2 db tipp-doboz: <div class="article-bulletin"><p>i</p><h3>Cím</h3><p>Szöveg</p></div> – az első <p>i</p> mindig maradjon benne!' : '✗ NE legyen article-bulletin doboz',
+        structOn.imgwrapper ? '✓ Pontosan 1 db képblokk: <div class="imgwrapper"> 3 db <p class="imgbox"><img class="no-lazy" alt="..." src="https://placeholder.url/kepN.jpg" height="300" width="420" loading="lazy" /><br />Képaláírás</p> </div>' : '✗ NE legyen imgwrapper képblokk',
+        structOn.zarovka100 ? '✓ Pontosan 1 db <p class="zarovka100">Érdekesség / fun fact. <strong>Kiemelt</strong> rész.</p>' : '✗ NE legyen zarovka100 bekezdés',
+        structOn.ul_list ? '✓ Legalább 1–2 db felsorolás (<ul><li>...</li></ul>), ahol a listaelem típus neve <strong> taggel kiemelve' : '✗ NE legyen ul felsorolás',
+        structOn.ol_list ? '✓ Legalább 1 db számozott lista (<ol><li>...</li></ol>)' : '',
+    ].filter(Boolean).join('\n');
+
+    const contextSection = state.additionalContext.trim()
+        ? `\nKIEGÉSZÍTŐ INFORMÁCIÓK / ALKATEGÓRIÁK:\n---\n${state.additionalContext.trim()}\n---\nAz alkategóriákat kreatív H2/H3 alcímekkel, bekezdésben és <a href="URL">anchor</a> linkkel szerepeltesd. Minden megadott URL-t kötelező beépíteni!`
+        : '';
+
+    return `SZEREP:
+Profi SEO szövegíró, webshop-szerkesztő és HTML-szakértő vagy.
+
+FELADAT:
+Hozz létre egy teljes termékkategória leírást kizárólag HTML formátumban, a megadott kategória témájára (${state.categoryTopic || '[kategória tema]'}) és a kulcsszavak keresési volumenére alapozva.
+
+KATEGÓRIA TÉMA (fő cél):
+${state.categoryTopic || '[Nincs megadva]'}
+
+KULCSSZÓ ADATBÁZIS (szó=havi_keresés):
+${kwList || '[Nincs megadva]'}
+${contextSection}
+
+KÖTELEZŐ HTML STRUKTÚRA (TARTSD BE SZIGORÚAN):
+${structRules}
+
+TARTALMI ÉS STÍLUSSZABÁLYOK:
+1. HANGNEM: ${toneText}
+2. KULCSSZÓ SŰRŰSÉG: A legnagyobb volumenű kulcsszavak kerüljenek H2 főcímekbe és bekezdések elejére; a kisebb volumenűek bekezdések belsejébe, ritkábban.
+3. A kulcsszavak SOHA ne legyenek <strong> vagy más kiemeléssel ellátva a szövegben – csak a termékjellemzők/kategórianevek kaphatnak <strong> kiemelést.
+4. Az imgwrapper képek src attribútuma legyen placeholder URL (pl. https://placeholder.url/kep1.jpg), az alt szöveg legyen releváns és leíró.
+5. A szöveg legyen informatív, olvasóbarát, természetes folyású – nem robotszerű.
+6. Minimum szómennyiség: 600–900 szó (kész HTML szöveg tartalma).
+
+MINTA STRUKTÚRA REFERENCIA:
+${SAMPLE_STRUCTURE}
+
+TECHNIKAI KÖVETELMÉNYEK:
+1. A válasz KIZÁRÓLAG nyers HTML kódot tartalmazzon – semmi más.
+2. NE legyen \`\`\`html kódblokk jelölés a válaszban.
+3. NE tartalmazza a <link> és <style> CSS blokkokat – ezeket a kliens adja hozzá.
+4. Minden megnyitott taget zárj le: pl. <h2>...</h2>, <p>...</p>, <ul><li>...</li></ul>.`;
+}
+
+// ═══════════════════════════════════════════════════
+// GENERATION (Claude API with streaming)
+// ═══════════════════════════════════════════════════
+async function handleGenerate() {
+    hideError();
+
+    if (!state.apiKey) { showError('Add meg a Google Gemini API kulcsodat!'); return; }
+    if (!state.categoryTopic.trim()) { showError('Add meg a kategória témáját!'); return; }
+    if (state.parsedKeywords.length === 0) { showError('Add meg a kulcsszavakat "szó=szám" formátumban!'); return; }
+
+    state.isGenerating = true;
+    state.generationResult = '';
+
+    // UI: generating state
+    const genBtn = document.getElementById('generate-btn');
+    const genIcon = document.getElementById('gen-icon');
+    const genLabel = document.getElementById('gen-label');
+    genBtn.disabled = true;
+    genBtn.classList.add('loading');
+    genIcon.innerHTML = '<span class="spinner">⟳</span>';
+    genLabel.textContent = 'Generálás...';
+
+    // Show code pane
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === 'code'));
+    showPane('code');
+
+    const emptyState = document.getElementById('empty-state');
+    const codeOutput = document.getElementById('code-output');
+    emptyState.style.display = 'none';
+    codeOutput.style.display = 'block';
+    codeOutput.value = '';
+
+    // Progress
+    const progressFill = document.getElementById('progress-fill');
+    progressFill.classList.add('indeterminate');
+
+    const prompt = constructPrompt();
+
+    try {
+        // Gemini streaming API
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${state.modelName}:streamGenerateContent?alt=sse&key=${state.apiKey}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    maxOutputTokens: 20000,
+                    temperature: 0.7,
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            const msg = errData?.error?.message || `HTTP ${response.status}`;
+            throw new Error(msg);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let accumulatedText = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const data = line.slice(6).trim();
+                if (!data || data === '[DONE]') continue;
+                try {
+                    const parsed = JSON.parse(data);
+                    const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        accumulatedText += text;
+                        let cleaned = accumulatedText.replace(/```html\n?/g, '').replace(/```\n?/g, '');
+                        codeOutput.value = cleaned;
+                        codeOutput.scrollTop = codeOutput.scrollHeight;
+                        state.generationResult = cleaned;
+                        document.getElementById('stat-output').textContent = `${cleaned.length.toLocaleString('hu-HU')} kar`;
+                        document.getElementById('output-stats').textContent = `${cleaned.length.toLocaleString('hu-HU')} karakter`;
+                    }
+                    // Handle finish reason errors
+                    const finishReason = parsed?.candidates?.[0]?.finishReason;
+                    if (finishReason && finishReason !== 'STOP' && finishReason !== 'MAX_TOKENS') {
+                        console.warn('Gemini finish reason:', finishReason);
+                    }
+                } catch (e) { /* skip malformed lines */ }
+            }
+        }
+
+        // Finalize: prepend mandatory CSS
+        let finalText = state.generationResult.trim();
+        finalText = finalText.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
+        state.generationResult = MANDATORY_PREFIX + finalText;
+        codeOutput.value = state.generationResult;
+        updateStats();
+        if (state.activeView === 'keywords') updateKwStats();
+
+    } catch (err) {
+        showError(err.message || 'Ismeretlen hiba a generálás során.');
+        emptyState.style.display = 'flex';
+        codeOutput.style.display = 'none';
+    } finally {
+        state.isGenerating = false;
+        genBtn.disabled = false;
+        genBtn.classList.remove('loading');
+        genIcon.textContent = '⚡';
+        genLabel.textContent = 'Generálás';
+        progressFill.classList.remove('indeterminate');
+        progressFill.style.width = state.generationResult ? '100%' : '0%';
+        setTimeout(() => { progressFill.style.width = '0%'; }, 2000);
+    }
+}
+
+// ═══════════════════════════════════════════════════
+// COPY
+// ═══════════════════════════════════════════════════
+async function handleCopy() {
+    const text = state.activeView === 'prompt' ? constructPrompt() : state.generationResult;
+    if (!text) return;
+
+    const copyBtn = document.getElementById('copy-btn');
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    }
+
+    copyBtn.classList.add('copied');
+    copyBtn.innerHTML = '<span>✓</span> Másolva!';
+    setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyBtn.innerHTML = '<span>⎘</span> Másolás';
+    }, 1500);
+}
+</script>
+</body>
+</html>
