@@ -693,6 +693,145 @@
             100% { transform: translateX(300%); }
         }
 
+        /* CHAR LENGTH CONTROL */
+        .char-length-toggle {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            cursor: pointer;
+            padding: 8px 10px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: all 0.15s;
+            user-select: none;
+            margin-bottom: 10px;
+        }
+        .char-length-toggle:hover { border-color: var(--border-bright); }
+        .char-length-toggle.on {
+            border-color: var(--accent);
+            background: rgba(79, 195, 247, 0.07);
+        }
+        .char-length-toggle .toggle-dot-sq {
+            width: 14px; height: 14px;
+            border-radius: 3px;
+            border: 1.5px solid var(--border-bright);
+            background: var(--surface);
+            flex-shrink: 0;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; color: transparent;
+        }
+        .char-length-toggle.on .toggle-dot-sq {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #000;
+        }
+        .char-length-toggle-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            flex: 1;
+        }
+        .char-length-toggle.on .char-length-toggle-label { color: var(--text); }
+        .char-length-badge {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--accent);
+            background: rgba(79, 195, 247, 0.12);
+            padding: 1px 6px;
+            border-radius: 4px;
+            display: none;
+        }
+        .char-length-toggle.on .char-length-badge { display: block; }
+
+        .char-length-controls {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .char-length-controls.visible { display: flex; }
+
+        .char-slider-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .char-slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .char-slider-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .char-slider-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--surface2);
+            border-radius: 2px;
+            outline: none;
+            border: 1px solid var(--border);
+            padding: 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 0 2px rgba(79,195,247,0.2);
+            transition: box-shadow 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 0 4px rgba(79,195,247,0.25);
+        }
+
+        .char-presets {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .char-preset-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 4px 9px;
+            font-size: 10px;
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .char-preset-btn:hover { border-color: var(--border-bright); color: var(--text); }
+        .char-preset-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(79,195,247,0.08);
+        }
+
+        .char-tolerance-note {
+            font-size: 10px;
+            color: var(--text-dim);
+            line-height: 1.5;
+            padding: 7px 9px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
         /* RESPONSIVE */
         @media (max-width: 900px) {
             .app-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
@@ -832,6 +971,38 @@
                     <div class="model-btn-name">2.5 Pro</div>
                     <div class="model-btn-desc">Alternatíva</div>
                 </button>
+            </div>
+        </div>
+
+        <!-- 6. Karakterhossz célzás -->
+        <div class="panel-section">
+            <div class="section-label">
+                <span>06</span> Karakterhossz célzás
+            </div>
+            <label class="char-length-toggle" id="char-length-toggle">
+                <div class="toggle-dot-sq" id="char-toggle-dot">✓</div>
+                <span class="char-length-toggle-label">Célzott karakterhossz beállítása</span>
+                <span class="char-length-badge" id="char-length-badge">4 500</span>
+            </label>
+            <div class="char-length-controls" id="char-length-controls">
+                <div class="char-slider-wrap">
+                    <div class="char-slider-header">
+                        <span class="char-slider-label">Elvárt karakterhossz (HTML)</span>
+                        <span class="char-slider-value" id="char-slider-display">4 500</span>
+                    </div>
+                    <input type="range" id="char-length-slider" min="2000" max="12000" step="500" value="4500">
+                </div>
+                <div class="char-presets">
+                    <button class="char-preset-btn active" data-val="4500">4 500</button>
+                    <button class="char-preset-btn" data-val="5000">5 000</button>
+                    <button class="char-preset-btn" data-val="6000">6 000</button>
+                    <button class="char-preset-btn" data-val="7000">7 000</button>
+                    <button class="char-preset-btn" data-val="8000">8 000</button>
+                    <button class="char-preset-btn" data-val="9000">9 000</button>
+                </div>
+                <div class="char-tolerance-note">
+                    ±10% eltérés megengedett. A modell a megadott értékhez igazítja a szöveg mélységét és a szekciókat.
+                </div>
             </div>
         </div>
 
@@ -1025,7 +1196,9 @@ let state = {
         zarovka100: true,
         ul_list: true,
         ol_list: false,
-    }
+    },
+    charLengthEnabled: false,
+    charLengthTarget: 4500,
 };
 
 // ═══════════════════════════════════════════════════
@@ -1150,6 +1323,38 @@ function attachListeners() {
 
     // Copy
     document.getElementById('copy-btn').addEventListener('click', handleCopy);
+
+    // Char length toggle
+    document.getElementById('char-length-toggle').addEventListener('click', () => {
+        state.charLengthEnabled = !state.charLengthEnabled;
+        const toggle = document.getElementById('char-length-toggle');
+        const controls = document.getElementById('char-length-controls');
+        toggle.classList.toggle('on', state.charLengthEnabled);
+        controls.classList.toggle('visible', state.charLengthEnabled);
+        updateCharLengthBadge();
+        updatePromptPreview();
+    });
+
+    // Char length slider
+    document.getElementById('char-length-slider').addEventListener('input', e => {
+        state.charLengthTarget = parseInt(e.target.value, 10);
+        updateCharLengthDisplay();
+        updateCharLengthBadge();
+        updateCharPresetButtons();
+        updatePromptPreview();
+    });
+
+    // Char preset buttons
+    document.querySelectorAll('.char-preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            state.charLengthTarget = parseInt(btn.dataset.val, 10);
+            document.getElementById('char-length-slider').value = state.charLengthTarget;
+            updateCharLengthDisplay();
+            updateCharLengthBadge();
+            updateCharPresetButtons();
+            updatePromptPreview();
+        });
+    });
 }
 
 // ═══════════════════════════════════════════════════
@@ -1188,6 +1393,20 @@ function updateKwChips() {
 function updateCharCount() {
     const len = state.additionalContext.length;
     document.getElementById('context-chars').textContent = `${len.toLocaleString('hu-HU')} karakter`;
+}
+
+function updateCharLengthDisplay() {
+    document.getElementById('char-slider-display').textContent = state.charLengthTarget.toLocaleString('hu-HU');
+}
+
+function updateCharLengthBadge() {
+    document.getElementById('char-length-badge').textContent = state.charLengthTarget.toLocaleString('hu-HU');
+}
+
+function updateCharPresetButtons() {
+    document.querySelectorAll('.char-preset-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.val, 10) === state.charLengthTarget);
+    });
 }
 
 function updateStats() {
@@ -1338,6 +1557,10 @@ function constructPrompt() {
         ? `\nKIEGÉSZÍTŐ INFORMÁCIÓK / ALKATEGÓRIÁK:\n---\n${state.additionalContext.trim()}\n---\nAz alkategóriákat kreatív H2/H3 alcímekkel, bekezdésben és <a href="URL">anchor</a> linkkel szerepeltesd. Minden megadott URL-t kötelező beépíteni!`
         : '';
 
+    const charLengthSection = state.charLengthEnabled
+        ? `\nCÉLZOTT KARAKTERHOSSZ:\nA generált HTML kimenet hossza legyen pontosan ${state.charLengthTarget.toLocaleString('hu-HU')} karakter (±10% eltérés megengedett). Ehhez igazítsd a bekezdések hosszát, a szekciókat, a listák részletességét. Ha szükséges, adj hozzá több alcímet és részletezőbb leírásokat a cél eléréséhez – de ne írj felesleges, ismétlő tartalmat. A karakterszám a teljes HTML-t tartalmazza, beleértve a tageket is.`
+        : '';
+
     return `SZEREP:
 Profi SEO szövegíró, webshop-szerkesztő és HTML-szakértő vagy.
 
@@ -1350,7 +1573,7 @@ ${state.categoryTopic || '[Nincs megadva]'}
 KULCSSZÓ ADATBÁZIS (szó=havi_keresés):
 ${kwList || '[Nincs megadva]'}
 ${contextSection}
-
+${charLengthSection}
 KÖTELEZŐ HTML STRUKTÚRA (TARTSD BE SZIGORÚAN):
 ${structRules}
 
@@ -1360,7 +1583,7 @@ TARTALMI ÉS STÍLUSSZABÁLYOK:
 3. A kulcsszavak SOHA ne legyenek <strong> vagy más kiemeléssel ellátva a szövegben – csak a termékjellemzők/kategórianevek kaphatnak <strong> kiemelést.
 4. Az imgwrapper képek src attribútuma legyen placeholder URL (pl. https://placeholder.url/kep1.jpg), az alt szöveg legyen releváns és leíró.
 5. A szöveg legyen informatív, olvasóbarát, természetes folyású – nem robotszerű.
-6. Minimum szómennyiség: 600–900 szó (kész HTML szöveg tartalma).
+6. ${state.charLengthEnabled ? `KÖTELEZŐ karakterhossz: ~${state.charLengthTarget.toLocaleString('hu-HU')} karakter (±10%).` : 'Minimum szómennyiség: 600–900 szó (kész HTML szöveg tartalma).'}
 
 MINTA STRUKTÚRA REFERENCIA:
 ${SAMPLE_STRUCTURE}
