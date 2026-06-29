@@ -1550,7 +1550,7 @@ function constructPrompt() {
         structOn.imgwrapper ? '✓ Pontosan 1 db képblokk: <div class="imgwrapper"> 3 db <p class="imgbox"><img class="no-lazy" alt="..." src="https://placeholder.url/kepN.jpg" height="300" width="420" loading="lazy" /><br />Képaláírás</p> </div>' : '✗ NE legyen imgwrapper képblokk',
         structOn.zarovka100 ? '✓ Pontosan 1 db <p class="zarovka100">Érdekesség / fun fact. <strong>Kiemelt</strong> rész.</p>' : '✗ NE legyen zarovka100 bekezdés',
         structOn.ul_list ? '✓ Legalább 1–2 db felsorolás (<ul><li>...</li></ul>), ahol a listaelem típus neve <strong> taggel kiemelve' : '✗ NE legyen ul felsorolás',
-        structOn.ol_list ? '✓ Legalább 1 db számozott lista (<ol><li>...</li></ol>)' : '',
+        structOn.ol_list ? '✓ Legalább 1 db számozott lista (<ol class="or_list"><li>...</li></ol>)' : '',
     ].filter(Boolean).join('\n');
 
     const contextSection = state.additionalContext.trim()
